@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phân Tích Lãi Thực - Đơn Hàng</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { text-align: center; color: #003366; margin-bottom: 6px; font-size: 1.6em; }
+  .subtitle { text-align: center; color: #888; font-size: 0.85em; margin-bottom: 24px; }
+
+  .section { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 18px; overflow: hidden; }
+  .section-header { padding: 12px 20px; font-weight: bold; font-size: 1.05em; color: #003366; }
+  .section-body { padding: 0 20px 16px; }
+
+  .header-input { background: #d9e1f2; }
+  .header-a { background: #b4c6e7; }
+  .header-b { background: #f4b084; }
+  .header-c { background: #c6efce; }
+  .header-d { background: #ffd966; }
+  .header-e { background: #d9e1f2; }
+
+  .row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+  .row:last-child { border-bottom: none; }
+  .row-label { flex: 1; font-size: 0.95em; }
+  .row-value { width: 220px; text-align: right; font-weight: 600; font-size: 0.95em; font-variant-numeric: tabular-nums; }
+  .row-value.red { color: #cc0000; }
+  .row-value.green { color: #0a7c00; }
+  .row-value.blue { color: #0000ff; }
+
+  .input-group { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+  .input-group:last-child { border-bottom: none; }
+  .input-group label { flex: 1; font-size: 0.95em; }
+  .input-group .unit { width: 90px; color: #888; font-size: 0.85em; text-align: right; padding-right: 10px; }
+  .input-group input, .input-group select { width: 180px; padding: 8px 12px; border: 2px solid #d9e1f2; border-radius: 6px; font-size: 1em; text-align: right; color: #0000ff; font-weight: 600; transition: border-color 0.2s; }
+  .input-group input:focus { outline: none; border-color: #4a90d9; box-shadow: 0 0 0 3px rgba(74,144,217,0.15); }
+
+  .note { font-size: 0.82em; color: #cc0000; font-style: italic; padding: 4px 0 4px 16px; }
+
+  .verify-box { background: #e8f4fd; border: 2px solid #4a90d9; border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-size: 0.88em; color: #0055aa; font-weight: 600; line-height: 1.5; }
+
+  .result-box { background: linear-gradient(135deg, #fff9c4, #fff176); border: 3px solid #f9a825; border-radius: 10px; padding: 16px 20px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+  .result-box .label { font-size: 1.15em; font-weight: bold; color: #333; }
+  .result-box .value { font-size: 1.5em; font-weight: bold; color: #cc0000; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .stat-card { background: #f8f9fa; border-radius: 8px; padding: 14px; text-align: center; border: 1px solid #e0e0e0; }
+  .stat-card .stat-label { font-size: 0.82em; color: #666; margin-bottom: 4px; }
+  .stat-card .stat-value { font-size: 1.2em; font-weight: bold; color: #003366; }
+
+  .separator { border: none; height: 1px; background: #ddd; margin: 6px 0; }
+
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    .row { flex-wrap: wrap; }
+    .row-value { width: 100%; text-align: right; margin-top: 2px; }
+    .input-group { flex-wrap: wrap; }
+    .input-group input { width: 100%; margin-top: 4px; }
+    .input-group .unit { width: auto; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .result-box { flex-direction: column; text-align: center; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>PHÂN TÍCH LÃI THỰC - ĐƠN HÀNG</h1>
+  <p class="subtitle">Công cụ tính lãi thực tự động sau tất cả chi phí và thuế</p>
+
+  <!-- THÔNG SỐ ĐẦU VÀO -->
+  <div class="section">
+    <div class="section-header header-input">THÔNG SỐ ĐẦU VÀO</div>
+    <div class="section-body">
+      <div class="input-group">
+        <label>Tên sản phẩm</label>
+        <input type="text" id="productName" value="Ổ cứng 16TB" style="color:#333;">
+      </div>
+      <div class="input-group">
+        <label>Số lượng</label>
+        <span class="unit">Chiếc</span>
+        <input type="number" id="qty" value="90" min="1">
+      </div>
+      <div class="input-group">
+        <label>Đơn giá mua (đã gồm VAT)</label>
+        <span class="unit">VND/chiếc</span>
+        <input type="text" id="buyPrice" value="14,000,000">
+      </div>
+      <div class="input-group">
+        <label>Đơn giá bán (đã gồm VAT)</label>
+        <span class="unit">VND/chiếc</span>
+        <input type="text" id="sellPrice" value="16,000,000">
+      </div>
+      <div class="input-group">
+        <label>Phí cảm ơn đối tác</label>
+        <span class="unit">VND/chiếc</span>
+        <input type="text" id="tipPerUnit" value="1,000,000">
+      </div>
+      <div class="input-group">
+        <label>Thuế suất VAT</label>
+        <span class="unit">%</span>
+        <input type="number" id="vatRate" value="8" min="0" max="100" step="0.5">
+      </div>
+      <div class="input-group">
+        <label>Thuế suất TNDN</label>
+        <span class="unit">%</span>
+        <input type="number" id="citRate" value="20" min="0" max="100" step="0.5">
+      </div>
+      <div class="input-group">
+        <label>Lãi suất vay</label>
+        <span class="unit">%/năm</span>
+        <input type="number" id="loanRate" value="9" min="0" max="100" step="0.1">
+      </div>
+      <div class="input-group">
+        <label>Thời hạn vay</label>
+        <span class="unit">Ngày</span>
+        <input type="number" id="loanDays" value="45" min="0" max="365">
+      </div>
+    </div>
+  </div>
+
+  <!-- A. DOANH THU & GIÁ VỐN -->
+  <div class="section">
+    <div class="section-header header-a">A. DOANH THU & GIÁ VỐN</div>
+    <div class="section-body">
+      <div class="row"><span class="row-label">Tổng doanh thu (đã gồm VAT)</span><span class="row-value" id="totalRevenue"></span></div>
+      <div class="row"><span class="row-label">Doanh thu trước VAT</span><span class="row-value" id="revenueExVat"></span></div>
+      <div class="row"><span class="row-label">VAT đầu ra</span><span class="row-value" id="vatOut"></span></div>
+      <hr class="separator">
+      <div class="row"><span class="row-label">Tổng giá mua (đã gồm VAT)</span><span class="row-value" id="totalCost"></span></div>
+      <div class="row"><span class="row-label">Giá mua trước VAT</span><span class="row-value" id="costExVat"></span></div>
+      <div class="row"><span class="row-label">VAT đầu vào</span><span class="row-value" id="vatIn"></span></div>
+      <hr class="separator">
+      <div class="row"><span class="row-label"><strong>LÃI GỘP (trước VAT)</strong></span><span class="row-value green" id="grossProfit"></span></div>
+      <div class="row"><span class="row-label"><strong>VAT phải nộp Nhà nước</strong></span><span class="row-value" id="vatPayable"></span></div>
+      <div class="verify-box" id="verifyBox"></div>
+    </div>
+  </div>
+
+  <!-- B. CÁC CHI PHÍ -->
+  <div class="section">
+    <div class="section-header header-b">B. CÁC CHI PHÍ</div>
+    <div class="section-body">
+      <div class="row"><span class="row-label">Chi phí cảm ơn đối tác (không có hóa đơn)</span><span class="row-value red" id="totalTip"></span></div>
+      <p class="note">→ Lưu ý: KHÔNG được trừ khi tính thuế TNDN</p>
+      <div class="row"><span class="row-label">Số tiền vay (toàn bộ tiền mua hàng)</span><span class="row-value" id="loanAmount"></span></div>
+      <div class="row"><span class="row-label">Chi phí lãi vay</span><span class="row-value red" id="interestCost"></span></div>
+      <hr class="separator">
+      <div class="row"><span class="row-label"><strong>TỔNG CHI PHÍ</strong></span><span class="row-value red" id="totalExpense"></span></div>
+    </div>
+  </div>
+
+  <!-- C. THUẾ TNDN -->
+  <div class="section">
+    <div class="section-header header-c">C. THUẾ THU NHẬP DOANH NGHIỆP (TNDN)</div>
+    <div class="section-body">
+      <div class="row"><span class="row-label">Lãi gộp</span><span class="row-value" id="citGross"></span></div>
+      <p class="note">(Chi phí lãi vay và cảm ơn đối tác KHÔNG trừ vào thu nhập chịu thuế)</p>
+      <div class="row"><span class="row-label"><strong>Thu nhập chịu thuế TNDN</strong></span><span class="row-value" id="taxableIncome"></span></div>
+      <div class="row"><span class="row-label"><strong>Thuế TNDN (<span id="citRateLabel"></span>%)</strong></span><span class="row-value red" id="citAmount"></span></div>
+    </div>
+  </div>
+
+  <!-- D. LÃI THỰC -->
+  <div class="section">
+    <div class="section-header header-d">D. TÍNH LÃI THỰC CUỐI CÙNG</div>
+    <div class="section-body">
+      <div class="row"><span class="row-label">Lãi gộp (Doanh thu - Giá vốn, trước VAT)</span><span class="row-value green" id="dGross"></span></div>
+      <div class="row"><span class="row-label">Trừ: Chi phí cảm ơn đối tác</span><span class="row-value red" id="dTip"></span></div>
+      <div class="row"><span class="row-label">Trừ: Chi phí lãi vay</span><span class="row-value red" id="dInterest"></span></div>
+      <div class="row"><span class="row-label">Trừ: Thuế TNDN phải nộp</span><span class="row-value red" id="dCit"></span></div>
+      <div class="result-box">
+        <span class="label">LÃI THỰC SAU TẤT CẢ</span>
+        <span class="value" id="netProfit"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- E. TỶ SUẤT -->
+  <div class="section">
+    <div class="section-header header-e">E. TỶ SUẤT LỢI NHUẬN</div>
+    <div class="section-body">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Tỷ suất / Vốn đầu tư</div>
+          <div class="stat-value" id="roiCapital"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Tỷ suất / Doanh thu</div>
+          <div class="stat-value" id="roiRevenue"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Lãi thực mỗi chiếc</div>
+          <div class="stat-value" id="profitPerUnit"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">ROI quy năm (365 ngày)</div>
+          <div class="stat-value" id="roiAnnual"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function parseNum(str) {
+  if (typeof str === 'number') return str;
+  return parseFloat(String(str).replace(/,/g, '')) || 0;
+}
+
+function fmt(n) {
+  return Math.round(n).toLocaleString('vi-VN');
+}
+
+function fmtPct(n) {
+  return (n * 100).toFixed(2) + '%';
+}
+
+function formatMoneyInput(input) {
+  input.addEventListener('blur', function() {
+    const val = parseNum(this.value);
+    if (val) this.value = fmt(val);
+  });
+  input.addEventListener('focus', function() {
+    this.value = this.value.replace(/,/g, '').replace(/\./g, '');
+  });
+}
+
+formatMoneyInput(document.getElementById('buyPrice'));
+formatMoneyInput(document.getElementById('sellPrice'));
+formatMoneyInput(document.getElementById('tipPerUnit'));
+
+function calculate() {
+  const qty = parseNum(document.getElementById('qty').value);
+  const buy = parseNum(document.getElementById('buyPrice').value);
+  const sell = parseNum(document.getElementById('sellPrice').value);
+  const tip = parseNum(document.getElementById('tipPerUnit').value);
+  const vatRate = parseNum(document.getElementById('vatRate').value) / 100;
+  const citRate = parseNum(document.getElementById('citRate').value) / 100;
+  const loanRate = parseNum(document.getElementById('loanRate').value) / 100;
+  const loanDays = parseNum(document.getElementById('loanDays').value);
+
+  // A. Doanh thu & Giá vốn
+  const totalRevenue = qty * sell;
+  const revenueExVat = totalRevenue / (1 + vatRate);
+  const vatOut = totalRevenue - revenueExVat;
+
+  const totalCost = qty * buy;
+  const costExVat = totalCost / (1 + vatRate);
+  const vatIn = totalCost - costExVat;
+
+  const grossProfit = revenueExVat - costExVat;
+  const vatPayable = vatOut - vatIn;
+
+  // B. Chi phí
+  const totalTip = qty * tip;
+  const loanAmount = totalCost;
+  const interestCost = loanAmount * loanRate * loanDays / 365;
+  const totalExpense = totalTip + interestCost;
+
+  // C. Thuế TNDN (không trừ lãi vay và cảm ơn)
+  const taxableIncome = grossProfit;
+  const citAmount = taxableIncome * citRate;
+
+  // D. Lãi thực
+  const netProfit = grossProfit - totalTip - interestCost - citAmount;
+
+  // Render A
+  document.getElementById('totalRevenue').textContent = fmt(totalRevenue) + ' VND';
+  document.getElementById('revenueExVat').textContent = fmt(revenueExVat) + ' VND';
+  document.getElementById('vatOut').textContent = fmt(vatOut) + ' VND';
+  document.getElementById('totalCost').textContent = fmt(totalCost) + ' VND';
+  document.getElementById('costExVat').textContent = fmt(costExVat) + ' VND';
+  document.getElementById('vatIn').textContent = fmt(vatIn) + ' VND';
+  document.getElementById('grossProfit').textContent = fmt(grossProfit) + ' VND';
+  document.getElementById('vatPayable').textContent = fmt(vatPayable) + ' VND';
+
+  document.getElementById('verifyBox').innerHTML =
+    '&#9889; KIỂM CHỨNG: Thu full VAT (' + fmt(totalRevenue) + ') - Mua full VAT (' + fmt(totalCost) + ') = ' + fmt(totalRevenue - totalCost) +
+    ' &rarr; Trừ VAT nộp NN (' + fmt(vatPayable) + ') = ' + fmt(totalRevenue - totalCost - vatPayable) +
+    ' &equiv; Lãi gộp trên. <strong>VAT ĐÃ ĐƯỢC TRỪ trong Lãi gộp.</strong>';
+
+  // Render B
+  document.getElementById('totalTip').textContent = '-' + fmt(totalTip) + ' VND';
+  document.getElementById('loanAmount').textContent = fmt(loanAmount) + ' VND';
+  document.getElementById('interestCost').textContent = '-' + fmt(interestCost) + ' VND';
+  document.getElementById('totalExpense').textContent = '-' + fmt(totalExpense) + ' VND';
+
+  // Render C
+  document.getElementById('citGross').textContent = fmt(grossProfit) + ' VND';
+  document.getElementById('citRateLabel').textContent = (citRate * 100);
+  document.getElementById('taxableIncome').textContent = fmt(taxableIncome) + ' VND';
+  document.getElementById('citAmount').textContent = '-' + fmt(citAmount) + ' VND';
+
+  // Render D
+  document.getElementById('dGross').textContent = fmt(grossProfit) + ' VND';
+  document.getElementById('dTip').textContent = '-' + fmt(totalTip) + ' VND';
+  document.getElementById('dInterest').textContent = '-' + fmt(interestCost) + ' VND';
+  document.getElementById('dCit').textContent = '-' + fmt(citAmount) + ' VND';
+  document.getElementById('netProfit').textContent = fmt(netProfit) + ' VND';
+
+  // Render E
+  document.getElementById('roiCapital').textContent = fmtPct(netProfit / totalCost);
+  document.getElementById('roiRevenue').textContent = fmtPct(netProfit / revenueExVat);
+  document.getElementById('profitPerUnit').textContent = fmt(netProfit / qty) + ' VND';
+  document.getElementById('roiAnnual').textContent = fmtPct(netProfit / totalCost * 365 / loanDays);
+}
+
+// Auto-calculate on any input change
+document.querySelectorAll('input').forEach(el => {
+  el.addEventListener('input', calculate);
+  el.addEventListener('change', calculate);
+});
+
+calculate();
+</script>
+</body>
+</html>
