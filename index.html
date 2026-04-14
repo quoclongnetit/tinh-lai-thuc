@@ -52,6 +52,18 @@
 
   .separator { border: none; height: 1px; background: #ddd; margin: 6px 0; }
 
+  .row-inline-input { width: 160px; padding: 6px 10px; border: 2px solid #ffd966; border-radius: 6px; font-size: 0.95em; text-align: right; color: #0000ff; font-weight: 600; }
+  .row-inline-input:focus { outline: none; border-color: #f9a825; box-shadow: 0 0 0 3px rgba(249,168,37,0.2); }
+
+  .btn-group { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .btn-excel { background: #217346; color: #fff; }
+  .btn-excel:hover { background: #1a5c38; }
+  .btn-zalo { background: #0068ff; color: #fff; }
+  .btn-zalo:hover { background: #0054cc; }
+  .btn-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 12px 28px; border-radius: 8px; font-size: 0.95em; z-index: 999; display: none; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+
   @media (max-width: 600px) {
     body { padding: 10px; }
     .row { flex-wrap: wrap; }
@@ -61,6 +73,9 @@
     .input-group .unit { width: auto; }
     .stats-grid { grid-template-columns: 1fr; }
     .result-box { flex-direction: column; text-align: center; gap: 8px; }
+    .btn-group { flex-direction: column; }
+    .btn { justify-content: center; }
+    .row-inline-input { width: 130px; }
   }
 </style>
 </head>
@@ -171,6 +186,10 @@
       <div class="row"><span class="row-label">Trừ: Hoa hồng môi giới</span><span class="row-value red" id="dTip"></span></div>
       <div class="row"><span class="row-label">Trừ: Chi phí lãi vay</span><span class="row-value red" id="dInterest"></span></div>
       <div class="row"><span class="row-label">Trừ: Thuế TNDN phải nộp</span><span class="row-value red" id="dCit"></span></div>
+      <div class="row">
+        <span class="row-label">Trừ: Chi phí khác</span>
+        <input type="text" id="otherCost" value="0" class="row-inline-input">
+      </div>
       <div class="result-box">
         <span class="label">LÃI THỰC SAU TẤT CẢ</span>
         <span class="value" id="netProfit"></span>
@@ -202,6 +221,20 @@
       </div>
     </div>
   </div>
+
+  <!-- BUTTONS -->
+  <div class="btn-group">
+    <button class="btn btn-excel" onclick="exportExcel()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM6 20V4h7v5h5v11H6z"/><path d="M8 13l2.5 4H8.2l-1.7-2.8L4.8 17H2.5L5 13l-2.3-3.7h2.3l1.5 2.6 1.5-2.6h2.3L8 13z" transform="translate(4,0)"/></svg>
+      Xuất file Excel
+    </button>
+    <button class="btn btn-zalo" onclick="copyZalo()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+      Copy gửi Zalo
+    </button>
+  </div>
+
+  <div class="btn-toast" id="toast"></div>
 </div>
 
 <script>
@@ -218,21 +251,29 @@ function fmtPct(n) {
   return (n * 100).toFixed(2) + '%';
 }
 
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2500);
+}
+
 function formatMoneyInput(input) {
   input.addEventListener('blur', function() {
     const val = parseNum(this.value);
     if (val) this.value = fmt(val);
   });
   input.addEventListener('focus', function() {
-    this.value = this.value.replace(/,/g, '').replace(/\./g, '');
+    this.value = this.value.replace(/[.,]/g, '');
   });
 }
 
 formatMoneyInput(document.getElementById('buyPrice'));
 formatMoneyInput(document.getElementById('sellPrice'));
 formatMoneyInput(document.getElementById('tipPerUnit'));
+formatMoneyInput(document.getElementById('otherCost'));
 
-function calculate() {
+function getCalcData() {
   const qty = parseNum(document.getElementById('qty').value);
   const buy = parseNum(document.getElementById('buyPrice').value);
   const sell = parseNum(document.getElementById('sellPrice').value);
@@ -241,80 +282,203 @@ function calculate() {
   const citRate = parseNum(document.getElementById('citRate').value) / 100;
   const loanRate = parseNum(document.getElementById('loanRate').value) / 100;
   const loanDays = parseNum(document.getElementById('loanDays').value);
+  const otherCost = parseNum(document.getElementById('otherCost').value);
+  const productName = document.getElementById('productName').value;
 
-  // A. Doanh thu & Giá vốn
   const totalRevenue = qty * sell;
   const revenueExVat = totalRevenue / (1 + vatRate);
   const vatOut = totalRevenue - revenueExVat;
-
   const totalCost = qty * buy;
   const costExVat = totalCost / (1 + vatRate);
   const vatIn = totalCost - costExVat;
-
   const grossProfit = revenueExVat - costExVat;
   const vatPayable = vatOut - vatIn;
-
-  // B. Chi phí
   const totalTip = qty * tip;
   const loanAmount = totalCost;
   const interestCost = loanAmount * loanRate * loanDays / 365;
   const totalExpense = totalTip + interestCost;
-
-  // C. Thuế TNDN (không trừ lãi vay và cảm ơn)
   const taxableIncome = grossProfit;
   const citAmount = taxableIncome * citRate;
+  const netProfit = grossProfit - totalTip - interestCost - citAmount - otherCost;
 
-  // D. Lãi thực
-  const netProfit = grossProfit - totalTip - interestCost - citAmount;
-
-  // Render A
-  document.getElementById('totalRevenue').textContent = fmt(totalRevenue) + ' VND';
-  document.getElementById('revenueExVat').textContent = fmt(revenueExVat) + ' VND';
-  document.getElementById('vatOut').textContent = fmt(vatOut) + ' VND';
-  document.getElementById('totalCost').textContent = fmt(totalCost) + ' VND';
-  document.getElementById('costExVat').textContent = fmt(costExVat) + ' VND';
-  document.getElementById('vatIn').textContent = fmt(vatIn) + ' VND';
-  document.getElementById('grossProfit').textContent = fmt(grossProfit) + ' VND';
-  document.getElementById('vatPayable').textContent = fmt(vatPayable) + ' VND';
-
-  document.getElementById('verifyBox').innerHTML =
-    '&#9889; KIỂM CHỨNG: Thu full VAT (' + fmt(totalRevenue) + ') - Mua full VAT (' + fmt(totalCost) + ') = ' + fmt(totalRevenue - totalCost) +
-    ' &rarr; Trừ VAT nộp NN (' + fmt(vatPayable) + ') = ' + fmt(totalRevenue - totalCost - vatPayable) +
-    ' &equiv; Lãi gộp trên. <strong>VAT ĐÃ ĐƯỢC TRỪ trong Lãi gộp.</strong>';
-
-  // Render B
-  document.getElementById('totalTip').textContent = '-' + fmt(totalTip) + ' VND';
-  document.getElementById('loanAmount').textContent = fmt(loanAmount) + ' VND';
-  document.getElementById('interestCost').textContent = '-' + fmt(interestCost) + ' VND';
-  document.getElementById('totalExpense').textContent = '-' + fmt(totalExpense) + ' VND';
-
-  // Render C
-  document.getElementById('citGross').textContent = fmt(grossProfit) + ' VND';
-  document.getElementById('citRateLabel').textContent = (citRate * 100);
-  document.getElementById('taxableIncome').textContent = fmt(taxableIncome) + ' VND';
-  document.getElementById('citAmount').textContent = '-' + fmt(citAmount) + ' VND';
-
-  // Render D
-  document.getElementById('dGross').textContent = fmt(grossProfit) + ' VND';
-  document.getElementById('dTip').textContent = '-' + fmt(totalTip) + ' VND';
-  document.getElementById('dInterest').textContent = '-' + fmt(interestCost) + ' VND';
-  document.getElementById('dCit').textContent = '-' + fmt(citAmount) + ' VND';
-  document.getElementById('netProfit').textContent = fmt(netProfit) + ' VND';
-
-  // Render E
-  document.getElementById('roiCapital').textContent = fmtPct(netProfit / totalCost);
-  document.getElementById('roiRevenue').textContent = fmtPct(netProfit / revenueExVat);
-  document.getElementById('profitPerUnit').textContent = fmt(netProfit / qty) + ' VND';
-  document.getElementById('roiAnnual').textContent = fmtPct(netProfit / totalCost * 365 / loanDays);
+  return { qty, buy, sell, tip, vatRate, citRate, loanRate, loanDays, otherCost, productName,
+           totalRevenue, revenueExVat, vatOut, totalCost, costExVat, vatIn,
+           grossProfit, vatPayable, totalTip, loanAmount, interestCost, totalExpense,
+           taxableIncome, citAmount, netProfit };
 }
 
-// Auto-calculate on any input change
+function calculate() {
+  const d = getCalcData();
+
+  document.getElementById('totalRevenue').textContent = fmt(d.totalRevenue) + ' VND';
+  document.getElementById('revenueExVat').textContent = fmt(d.revenueExVat) + ' VND';
+  document.getElementById('vatOut').textContent = fmt(d.vatOut) + ' VND';
+  document.getElementById('totalCost').textContent = fmt(d.totalCost) + ' VND';
+  document.getElementById('costExVat').textContent = fmt(d.costExVat) + ' VND';
+  document.getElementById('vatIn').textContent = fmt(d.vatIn) + ' VND';
+  document.getElementById('grossProfit').textContent = fmt(d.grossProfit) + ' VND';
+  document.getElementById('vatPayable').textContent = fmt(d.vatPayable) + ' VND';
+
+  document.getElementById('verifyBox').innerHTML =
+    '&#9889; KIỂM CHỨNG: Thu full VAT (' + fmt(d.totalRevenue) + ') - Mua full VAT (' + fmt(d.totalCost) + ') = ' + fmt(d.totalRevenue - d.totalCost) +
+    ' &rarr; Trừ VAT nộp NN (' + fmt(d.vatPayable) + ') = ' + fmt(d.totalRevenue - d.totalCost - d.vatPayable) +
+    ' &equiv; Lãi gộp trên. <strong>VAT ĐÃ ĐƯỢC TRỪ trong Lãi gộp.</strong>';
+
+  document.getElementById('totalTip').textContent = '-' + fmt(d.totalTip) + ' VND';
+  document.getElementById('loanAmount').textContent = fmt(d.loanAmount) + ' VND';
+  document.getElementById('interestCost').textContent = '-' + fmt(d.interestCost) + ' VND';
+  document.getElementById('totalExpense').textContent = '-' + fmt(d.totalExpense) + ' VND';
+
+  document.getElementById('citGross').textContent = fmt(d.grossProfit) + ' VND';
+  document.getElementById('citRateLabel').textContent = (d.citRate * 100);
+  document.getElementById('taxableIncome').textContent = fmt(d.taxableIncome) + ' VND';
+  document.getElementById('citAmount').textContent = '-' + fmt(d.citAmount) + ' VND';
+
+  document.getElementById('dGross').textContent = fmt(d.grossProfit) + ' VND';
+  document.getElementById('dTip').textContent = '-' + fmt(d.totalTip) + ' VND';
+  document.getElementById('dInterest').textContent = '-' + fmt(d.interestCost) + ' VND';
+  document.getElementById('dCit').textContent = '-' + fmt(d.citAmount) + ' VND';
+  document.getElementById('netProfit').textContent = fmt(d.netProfit) + ' VND';
+
+  document.getElementById('roiCapital').textContent = fmtPct(d.netProfit / d.totalCost);
+  document.getElementById('roiRevenue').textContent = fmtPct(d.netProfit / d.revenueExVat);
+  document.getElementById('profitPerUnit').textContent = fmt(d.netProfit / d.qty) + ' VND';
+  document.getElementById('roiAnnual').textContent = fmtPct(d.netProfit / d.totalCost * 365 / d.loanDays);
+}
+
 document.querySelectorAll('input').forEach(el => {
   el.addEventListener('input', calculate);
   el.addEventListener('change', calculate);
 });
 
 calculate();
+
+// === COPY ZALO ===
+function copyZalo() {
+  const d = getCalcData();
+  const lines = [
+    '================================',
+    'PHÂN TÍCH LÃI THỰC - ' + d.productName.toUpperCase(),
+    '================================',
+    '',
+    'A. DOANH THU & GIÁ VỐN',
+    '- Số lượng: ' + d.qty + ' chiếc',
+    '- Đơn giá mua (VAT): ' + fmt(d.buy) + ' VND',
+    '- Đơn giá bán (VAT): ' + fmt(d.sell) + ' VND',
+    '- Doanh thu trước VAT: ' + fmt(d.revenueExVat) + ' VND',
+    '- Giá vốn trước VAT: ' + fmt(d.costExVat) + ' VND',
+    '- LÃI GỘP: ' + fmt(d.grossProfit) + ' VND',
+    '- VAT phải nộp: ' + fmt(d.vatPayable) + ' VND',
+    '',
+    'B. CÁC CHI PHÍ',
+    '- Hoa hồng môi giới: -' + fmt(d.totalTip) + ' VND',
+    '- Lãi vay (' + (d.loanRate*100) + '%/năm x ' + d.loanDays + ' ngày): -' + fmt(d.interestCost) + ' VND',
+    '',
+    'C. THUẾ TNDN',
+    '- Thu nhập chịu thuế: ' + fmt(d.taxableIncome) + ' VND',
+    '- Thuế TNDN (' + (d.citRate*100) + '%): -' + fmt(d.citAmount) + ' VND',
+    '',
+    'D. LÃI THỰC CUỐI CÙNG',
+    '  Lãi gộp:          +' + fmt(d.grossProfit) + '',
+    '  Hoa hồng MG:      -' + fmt(d.totalTip) + '',
+    '  Lãi vay:          -' + fmt(d.interestCost) + '',
+    '  Thuế TNDN:        -' + fmt(d.citAmount) + '',
+  ];
+  if (d.otherCost > 0) {
+    lines.push('  Chi phí khác:      -' + fmt(d.otherCost) + '');
+  }
+  lines.push(
+    '  --------------------------------',
+    '  >>> LÃI THỰC: ' + fmt(d.netProfit) + ' VND <<<',
+    '',
+    'E. TỶ SUẤT',
+    '- Tỷ suất/vốn: ' + fmtPct(d.netProfit / d.totalCost),
+    '- Lãi/chiếc: ' + fmt(d.netProfit / d.qty) + ' VND',
+    '- ROI quy năm: ' + fmtPct(d.netProfit / d.totalCost * 365 / d.loanDays),
+  );
+
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    showToast('Da copy! Dan vao Zalo de gui.');
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = lines.join('\n');
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Da copy! Dan vao Zalo de gui.');
+  });
+}
+
+// === EXPORT EXCEL ===
+function exportExcel() {
+  const d = getCalcData();
+  const rows = [
+    ['PHÂN TÍCH LÃI THỰC - ' + d.productName.toUpperCase()],
+    [],
+    ['THÔNG SỐ ĐẦU VÀO', '', 'Giá trị'],
+    ['Sản phẩm', '', d.productName],
+    ['Số lượng', 'Chiếc', d.qty],
+    ['Đơn giá mua (đã gồm VAT)', 'VND/chiếc', d.buy],
+    ['Đơn giá bán (đã gồm VAT)', 'VND/chiếc', d.sell],
+    ['Hoa hồng môi giới', 'VND/chiếc', d.tip],
+    ['Thuế suất VAT', '%', d.vatRate * 100],
+    ['Thuế suất TNDN', '%', d.citRate * 100],
+    ['Lãi suất vay', '%/năm', d.loanRate * 100],
+    ['Thời hạn vay', 'Ngày', d.loanDays],
+    [],
+    ['A. DOANH THU & GIÁ VỐN', '', 'Số tiền (VND)'],
+    ['Tổng doanh thu (đã gồm VAT)', '', d.totalRevenue],
+    ['Doanh thu trước VAT', '', d.revenueExVat],
+    ['VAT đầu ra', '', d.vatOut],
+    ['Tổng giá mua (đã gồm VAT)', '', d.totalCost],
+    ['Giá mua trước VAT', '', d.costExVat],
+    ['VAT đầu vào', '', d.vatIn],
+    ['LÃI GỘP (trước VAT)', '', d.grossProfit],
+    ['VAT phải nộp Nhà nước', '', d.vatPayable],
+    [],
+    ['B. CÁC CHI PHÍ', '', 'Số tiền (VND)'],
+    ['Hoa hồng môi giới (ngoài hợp đồng)', '', d.totalTip],
+    ['Chi phí lãi vay', '', d.interestCost],
+    ['TỔNG CHI PHÍ', '', d.totalExpense],
+    [],
+    ['C. THUẾ TNDN', '', 'Số tiền (VND)'],
+    ['Thu nhập chịu thuế', '', d.taxableIncome],
+    ['Thuế TNDN (' + (d.citRate*100) + '%)', '', d.citAmount],
+    [],
+    ['D. LÃI THỰC CUỐI CÙNG', '', 'Số tiền (VND)'],
+    ['Lãi gộp', '', d.grossProfit],
+    ['Trừ: Hoa hồng môi giới', '', -d.totalTip],
+    ['Trừ: Chi phí lãi vay', '', -d.interestCost],
+    ['Trừ: Thuế TNDN', '', -d.citAmount],
+    ['Trừ: Chi phí khác', '', -d.otherCost],
+    ['LÃI THỰC SAU TẤT CẢ', '', d.netProfit],
+    [],
+    ['E. TỶ SUẤT LỢI NHUẬN'],
+    ['Tỷ suất / Vốn đầu tư', '', fmtPct(d.netProfit / d.totalCost)],
+    ['Tỷ suất / Doanh thu', '', fmtPct(d.netProfit / d.revenueExVat)],
+    ['Lãi thực mỗi chiếc', 'VND', Math.round(d.netProfit / d.qty)],
+    ['ROI quy năm', '%/năm', fmtPct(d.netProfit / d.totalCost * 365 / d.loanDays)],
+  ];
+
+  let csv = '\uFEFF';
+  rows.forEach(row => {
+    csv += row.map(cell => {
+      if (cell === undefined || cell === null) return '';
+      const s = String(typeof cell === 'number' ? Math.round(cell) : cell);
+      return '"' + s.replace(/"/g, '""') + '"';
+    }).join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Phan_tich_lai_thuc_' + d.productName.replace(/\s+/g, '_') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Da tai file Excel thanh cong!');
+}
 </script>
 </body>
 </html>
