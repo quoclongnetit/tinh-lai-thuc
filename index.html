@@ -207,11 +207,11 @@
 <script>
 function parseNum(str) {
   if (typeof str === 'number') return str;
-  return parseFloat(String(str).replace(/,/g, '')) || 0;
+  return parseFloat(String(str).replace(/[.,\s]/g, '')) || 0;
 }
 
 function fmt(n) {
-  return Math.round(n).toLocaleString('vi-VN');
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 function fmtPct(n) {
