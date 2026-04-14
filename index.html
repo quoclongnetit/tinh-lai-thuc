@@ -94,7 +94,7 @@
         <input type="text" id="sellPrice" value="16,000,000">
       </div>
       <div class="input-group">
-        <label>Phí cảm ơn đối tác</label>
+        <label>Hoa hồng môi giới</label>
         <span class="unit">VND/chiếc</span>
         <input type="text" id="tipPerUnit" value="1,000,000">
       </div>
@@ -143,7 +143,7 @@
   <div class="section">
     <div class="section-header header-b">B. CÁC CHI PHÍ</div>
     <div class="section-body">
-      <div class="row"><span class="row-label">Chi phí cảm ơn đối tác (không có hóa đơn)</span><span class="row-value red" id="totalTip"></span></div>
+      <div class="row"><span class="row-label">Chi phí hoa hồng môi giới (ngoài hợp đồng)</span><span class="row-value red" id="totalTip"></span></div>
       <p class="note">→ Lưu ý: KHÔNG được trừ khi tính thuế TNDN</p>
       <div class="row"><span class="row-label">Số tiền vay (toàn bộ tiền mua hàng)</span><span class="row-value" id="loanAmount"></span></div>
       <div class="row"><span class="row-label">Chi phí lãi vay</span><span class="row-value red" id="interestCost"></span></div>
@@ -157,7 +157,7 @@
     <div class="section-header header-c">C. THUẾ THU NHẬP DOANH NGHIỆP (TNDN)</div>
     <div class="section-body">
       <div class="row"><span class="row-label">Lãi gộp</span><span class="row-value" id="citGross"></span></div>
-      <p class="note">(Chi phí lãi vay và cảm ơn đối tác KHÔNG trừ vào thu nhập chịu thuế)</p>
+      <p class="note">(Chi phí lãi vay và hoa hồng môi giới KHÔNG trừ vào thu nhập chịu thuế)</p>
       <div class="row"><span class="row-label"><strong>Thu nhập chịu thuế TNDN</strong></span><span class="row-value" id="taxableIncome"></span></div>
       <div class="row"><span class="row-label"><strong>Thuế TNDN (<span id="citRateLabel"></span>%)</strong></span><span class="row-value red" id="citAmount"></span></div>
     </div>
@@ -168,7 +168,7 @@
     <div class="section-header header-d">D. TÍNH LÃI THỰC CUỐI CÙNG</div>
     <div class="section-body">
       <div class="row"><span class="row-label">Lãi gộp (Doanh thu - Giá vốn, trước VAT)</span><span class="row-value green" id="dGross"></span></div>
-      <div class="row"><span class="row-label">Trừ: Chi phí cảm ơn đối tác</span><span class="row-value red" id="dTip"></span></div>
+      <div class="row"><span class="row-label">Trừ: Hoa hồng môi giới</span><span class="row-value red" id="dTip"></span></div>
       <div class="row"><span class="row-label">Trừ: Chi phí lãi vay</span><span class="row-value red" id="dInterest"></span></div>
       <div class="row"><span class="row-label">Trừ: Thuế TNDN phải nộp</span><span class="row-value red" id="dCit"></span></div>
       <div class="result-box">
