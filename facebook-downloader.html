@@ -29,16 +29,16 @@
   .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
   .btn-primary { background: #1877f2; color: #fff; }
   .btn-primary:hover:not(:disabled) { background: #1565c0; }
-  .btn-hd { background: #137333; color: #fff; min-width: 140px; justify-content: center; }
-  .btn-hd:hover { background: #0d5c2a; }
-  .btn-sd { background: #b05e00; color: #fff; min-width: 140px; justify-content: center; }
-  .btn-sd:hover { background: #8c4a00; }
-  .btn-audio { background: #6200ea; color: #fff; min-width: 140px; justify-content: center; }
-  .btn-audio:hover { background: #4a00b0; }
+  .btn-snap { background: #137333; color: #fff; flex: 1; min-width: 140px; justify-content: center; }
+  .btn-snap:hover { background: #0d5c2a; }
+  .btn-fvid { background: #b05e00; color: #fff; flex: 1; min-width: 140px; justify-content: center; }
+  .btn-fvid:hover { background: #8c4a00; }
+  .btn-save { background: #6200ea; color: #fff; flex: 1; min-width: 140px; justify-content: center; }
+  .btn-save:hover { background: #4a00b0; }
 
   .status-box { display: none; padding: 14px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.95em; font-weight: 500; }
-  .status-loading { background: #e7f3ff; color: #1877f2; border: 1px solid #cce0ff; }
   .status-error { background: #fce8e6; color: #c62828; border: 1px solid #f5c6c2; }
+  .service-label { font-size: 0.82em; color: #666; margin: 14px 0 8px; }
 
   .result-area { display: none; }
   .video-thumb { width: 100%; max-height: 240px; object-fit: cover; border-radius: 8px; margin-bottom: 14px; background: #000; }
@@ -53,9 +53,6 @@
   .guide-list li::before { content: "▶"; color: #1877f2; font-size: 0.75em; margin-top: 3px; flex-shrink: 0; }
 
   .note-box { background: #fff8e1; border-left: 4px solid #ffc107; padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 0.85em; color: #666; margin-top: 14px; line-height: 1.6; }
-
-  .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(24,119,242,0.3); border-top-color: #1877f2; border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
 
   .back-link { display: inline-flex; align-items: center; gap: 6px; color: #1877f2; text-decoration: none; font-size: 0.9em; margin-bottom: 18px; }
   .back-link:hover { text-decoration: underline; }
@@ -96,17 +93,13 @@
         </button>
       </div>
 
-      <!-- Loading / Error -->
-      <div class="status-box status-loading" id="statusLoading">
-        <span class="spinner"></span>&nbsp; Đang xử lý, vui lòng chờ...
-      </div>
+      <!-- Error -->
       <div class="status-box status-error" id="statusError"></div>
 
       <!-- Result -->
       <div class="result-area" id="resultArea">
         <hr class="divider">
-        <div class="video-title" id="videoTitle"></div>
-        <img class="video-thumb" id="videoThumb" src="" alt="Thumbnail" onerror="this.style.display='none'" />
+        <p class="service-label">Chọn dịch vụ để tải video — trang mới sẽ mở ra với link đã điền sẵn:</p>
         <div class="download-options" id="downloadOptions"></div>
       </div>
     </div>
@@ -132,137 +125,63 @@
 </div>
 
 <script>
-const COBALT_API = 'https://api.cobalt.tools/';
+const SERVICES = [
+  {
+    name: 'SnapSave',
+    desc: 'HD & SD',
+    css: 'btn-snap',
+    url: (u) => 'https://snapsave.app/?url=' + encodeURIComponent(u),
+  },
+  {
+    name: 'GetFVid',
+    desc: 'Chất lượng cao',
+    css: 'btn-fvid',
+    url: (u) => 'https://getfvid.com/?q=' + encodeURIComponent(u),
+  },
+  {
+    name: 'SaveFrom',
+    desc: 'Nhiều định dạng',
+    css: 'btn-save',
+    url: (u) => 'https://en.savefrom.net/1/?sf_url=' + encodeURIComponent(u),
+  },
+];
 
-function showStatus(type, msg) {
-  document.getElementById('statusLoading').style.display = 'none';
+function showError(msg) {
+  const el = document.getElementById('statusError');
+  el.style.display = 'block';
+  el.textContent = msg;
+  document.getElementById('resultArea').style.display = 'none';
+}
+
+function fetchVideo() {
+  const url = document.getElementById('fbUrl').value.trim();
+
   document.getElementById('statusError').style.display = 'none';
   document.getElementById('resultArea').style.display = 'none';
-  if (type === 'loading') {
-    document.getElementById('statusLoading').style.display = 'block';
-  } else if (type === 'error') {
-    document.getElementById('statusError').style.display = 'block';
-    document.getElementById('statusError').textContent = msg;
-  }
-}
 
-function makeDownloadBtn(label, url, cssClass, filename) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename || 'facebook-video.mp4';
-  a.target = '_blank';
-  a.rel = 'noopener noreferrer';
-  a.className = 'btn ' + cssClass;
-  a.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>${label}`;
-  return a;
-}
-
-async function fetchVideo() {
-  const url = document.getElementById('fbUrl').value.trim();
   if (!url) {
-    showStatus('error', 'Vui lòng nhập link video Facebook.');
+    showError('Vui lòng nhập link video Facebook.');
     return;
   }
   if (!/facebook\.com|fb\.watch|fb\.com/.test(url)) {
-    showStatus('error', 'Link không hợp lệ. Vui lòng nhập đúng link video Facebook (facebook.com, fb.watch).');
+    showError('Link không hợp lệ. Vui lòng nhập đúng link Facebook (facebook.com hoặc fb.watch).');
     return;
   }
-
-  const btn = document.getElementById('fetchBtn');
-  btn.disabled = true;
-  showStatus('loading');
-
-  try {
-    const res = await fetch(COBALT_API, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: url,
-        videoQuality: 'max',
-        filenameStyle: 'pretty',
-        downloadMode: 'auto',
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error('Máy chủ phản hồi lỗi: ' + res.status);
-    }
-
-    const data = await res.json();
-    handleResult(data, url);
-  } catch (err) {
-    showStatus('error', 'Không thể kết nối dịch vụ tải video. Vui lòng thử lại sau.\n(' + err.message + ')');
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-function handleResult(data, sourceUrl) {
-  document.getElementById('statusLoading').style.display = 'none';
-  document.getElementById('statusError').style.display = 'none';
 
   const opts = document.getElementById('downloadOptions');
   opts.innerHTML = '';
-  document.getElementById('videoTitle').textContent = '';
-  document.getElementById('videoThumb').style.display = 'none';
 
-  if (data.status === 'error') {
-    const code = data.error?.code || 'unknown';
-    const msg = errorMessage(code);
-    showStatus('error', msg);
-    return;
-  }
+  SERVICES.forEach(svc => {
+    const a = document.createElement('a');
+    a.href = svc.url(url);
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.className = 'btn ' + svc.css;
+    a.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>${svc.name} <span style="font-weight:400;font-size:0.85em;opacity:0.85">(${svc.desc})</span>`;
+    opts.appendChild(a);
+  });
 
-  if (data.status === 'redirect' || data.status === 'tunnel') {
-    const filename = data.filename || 'facebook-video.mp4';
-    document.getElementById('videoTitle').textContent = filename.replace(/\.[^.]+$/, '').replace(/_/g, ' ');
-    if (data.thumbnail) {
-      const thumb = document.getElementById('videoThumb');
-      thumb.src = data.thumbnail;
-      thumb.style.display = 'block';
-    }
-    opts.appendChild(makeDownloadBtn('Tải Video (Chất lượng cao)', data.url, 'btn-hd', filename));
-    document.getElementById('resultArea').style.display = 'block';
-    return;
-  }
-
-  if (data.status === 'picker') {
-    document.getElementById('videoTitle').textContent = 'Chọn định dạng để tải:';
-    if (data.audio) {
-      opts.appendChild(makeDownloadBtn('Tải Âm thanh', data.audio, 'btn-audio', 'audio.mp3'));
-    }
-    data.picker.forEach((item, i) => {
-      if (item.url) {
-        const label = item.type === 'video' ? `Video ${i + 1}` : `File ${i + 1}`;
-        opts.appendChild(makeDownloadBtn(label, item.url, 'btn-hd', `facebook-${i + 1}.mp4`));
-        if (item.thumb && i === 0) {
-          const thumb = document.getElementById('videoThumb');
-          thumb.src = item.thumb;
-          thumb.style.display = 'block';
-        }
-      }
-    });
-    document.getElementById('resultArea').style.display = 'block';
-    return;
-  }
-
-  showStatus('error', 'Phản hồi không hợp lệ từ máy chủ. Vui lòng thử lại.');
-}
-
-function errorMessage(code) {
-  const messages = {
-    'error.api.link.invalid': 'Link không hợp lệ. Hãy kiểm tra lại link Facebook.',
-    'error.api.link.unsupported': 'Link này không được hỗ trợ. Chỉ hỗ trợ video Facebook công khai.',
-    'error.api.fetch.fail': 'Không thể tải thông tin video. Video có thể bị riêng tư hoặc đã bị xoá.',
-    'error.api.fetch.short.limit': 'Đã vượt giới hạn yêu cầu. Vui lòng thử lại sau ít phút.',
-    'error.api.rate_exceeded': 'Đã vượt giới hạn yêu cầu. Vui lòng chờ vài phút rồi thử lại.',
-    'error.api.content.too_long': 'Video quá dài, không thể xử lý.',
-    'error.api.content.video.unavailable': 'Video không khả dụng hoặc đã bị xoá.',
-  };
-  return messages[code] || `Lỗi: ${code}. Video có thể bị riêng tư hoặc không hỗ trợ.`;
+  document.getElementById('resultArea').style.display = 'block';
 }
 
 document.getElementById('fbUrl').addEventListener('keydown', function(e) {
@@ -271,9 +190,8 @@ document.getElementById('fbUrl').addEventListener('keydown', function(e) {
 
 document.getElementById('fbUrl').addEventListener('paste', function() {
   setTimeout(() => {
-    const v = this.value.trim();
-    if (/facebook\.com|fb\.watch|fb\.com/.test(v)) {
-      document.getElementById('fetchBtn').focus();
+    if (/facebook\.com|fb\.watch|fb\.com/.test(this.value.trim())) {
+      fetchVideo();
     }
   }, 100);
 });
