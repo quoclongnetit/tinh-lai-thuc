@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tải Video Facebook - Miễn Phí</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
+  .container { max-width: 700px; margin: 0 auto; }
+  h1 { text-align: center; color: #1877f2; margin-bottom: 6px; font-size: 1.6em; }
+  .subtitle { text-align: center; color: #888; font-size: 0.85em; margin-bottom: 24px; }
+
+  .section { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 18px; overflow: hidden; }
+  .section-header { padding: 12px 20px; font-weight: bold; font-size: 1.05em; }
+  .section-body { padding: 16px 20px; }
+
+  .header-input { background: #e7f3ff; color: #1877f2; }
+  .header-result { background: #e6f4ea; color: #137333; }
+  .header-guide { background: #fef7e0; color: #b05e00; }
+
+  .url-group { display: flex; gap: 10px; align-items: center; }
+  .url-group input { flex: 1; padding: 12px 16px; border: 2px solid #d9e1f2; border-radius: 8px; font-size: 1em; transition: border-color 0.2s; }
+  .url-group input:focus { outline: none; border-color: #1877f2; box-shadow: 0 0 0 3px rgba(24,119,242,0.15); }
+  .url-group input::placeholder { color: #aaa; }
+
+  .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-primary { background: #1877f2; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #1565c0; }
+  .btn-hd { background: #137333; color: #fff; min-width: 140px; justify-content: center; }
+  .btn-hd:hover { background: #0d5c2a; }
+  .btn-sd { background: #b05e00; color: #fff; min-width: 140px; justify-content: center; }
+  .btn-sd:hover { background: #8c4a00; }
+  .btn-audio { background: #6200ea; color: #fff; min-width: 140px; justify-content: center; }
+  .btn-audio:hover { background: #4a00b0; }
+
+  .status-box { display: none; padding: 14px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.95em; font-weight: 500; }
+  .status-loading { background: #e7f3ff; color: #1877f2; border: 1px solid #cce0ff; }
+  .status-error { background: #fce8e6; color: #c62828; border: 1px solid #f5c6c2; }
+
+  .result-area { display: none; }
+  .video-thumb { width: 100%; max-height: 240px; object-fit: cover; border-radius: 8px; margin-bottom: 14px; background: #000; }
+  .video-title { font-size: 1em; font-weight: 600; color: #333; margin-bottom: 14px; word-break: break-word; }
+
+  .download-options { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+
+  .divider { border: none; height: 1px; background: #eee; margin: 14px 0; }
+
+  .guide-list { list-style: none; padding: 0; }
+  .guide-list li { padding: 6px 0; font-size: 0.92em; color: #555; display: flex; align-items: flex-start; gap: 8px; }
+  .guide-list li::before { content: "▶"; color: #1877f2; font-size: 0.75em; margin-top: 3px; flex-shrink: 0; }
+
+  .note-box { background: #fff8e1; border-left: 4px solid #ffc107; padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 0.85em; color: #666; margin-top: 14px; line-height: 1.6; }
+
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(24,119,242,0.3); border-top-color: #1877f2; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .back-link { display: inline-flex; align-items: center; gap: 6px; color: #1877f2; text-decoration: none; font-size: 0.9em; margin-bottom: 18px; }
+  .back-link:hover { text-decoration: underline; }
+
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    .url-group { flex-direction: column; }
+    .url-group input { width: 100%; }
+    .btn-primary { width: 100%; justify-content: center; }
+    .download-options { flex-direction: column; }
+    .btn-hd, .btn-sd, .btn-audio { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <a href="index.html" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877f2"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    Quay lại Tính Lãi Thực
+  </a>
+
+  <h1>
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="#1877f2" style="vertical-align:middle;margin-right:8px"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/></svg>
+    Tải Video Facebook
+  </h1>
+  <p class="subtitle">Dán link video Facebook để tải về máy — Miễn phí, không cài ứng dụng</p>
+
+  <!-- INPUT -->
+  <div class="section">
+    <div class="section-header header-input">Nhập link video Facebook</div>
+    <div class="section-body">
+      <div class="url-group">
+        <input type="url" id="fbUrl" placeholder="https://www.facebook.com/watch?v=..." autocomplete="off" />
+        <button class="btn btn-primary" id="fetchBtn" onclick="fetchVideo()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          Lấy link
+        </button>
+      </div>
+
+      <!-- Loading / Error -->
+      <div class="status-box status-loading" id="statusLoading">
+        <span class="spinner"></span>&nbsp; Đang xử lý, vui lòng chờ...
+      </div>
+      <div class="status-box status-error" id="statusError"></div>
+
+      <!-- Result -->
+      <div class="result-area" id="resultArea">
+        <hr class="divider">
+        <div class="video-title" id="videoTitle"></div>
+        <img class="video-thumb" id="videoThumb" src="" alt="Thumbnail" onerror="this.style.display='none'" />
+        <div class="download-options" id="downloadOptions"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HƯỚNG DẪN -->
+  <div class="section">
+    <div class="section-header header-guide">Hướng dẫn lấy link video Facebook</div>
+    <div class="section-body">
+      <ul class="guide-list">
+        <li>Mở Facebook và tìm video bạn muốn tải.</li>
+        <li>Nhấn vào video, sau đó nhấn dấu "..." (ba chấm) phía trên bài đăng.</li>
+        <li>Chọn <strong>"Sao chép link"</strong> hoặc <strong>"Copy link"</strong>.</li>
+        <li>Dán link vào ô bên trên rồi nhấn <strong>"Lấy link"</strong>.</li>
+        <li>Chọn chất lượng HD hoặc SD để tải về.</li>
+      </ul>
+      <div class="note-box">
+        <strong>Lưu ý:</strong> Công cụ này chỉ hỗ trợ video <strong>công khai (Public)</strong>. Video riêng tư hoặc chỉ bạn bè xem không thể tải được.
+        Chỉ dùng để tải video của bạn hoặc video được phép chia sẻ.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const COBALT_API = 'https://api.cobalt.tools/';
+
+function showStatus(type, msg) {
+  document.getElementById('statusLoading').style.display = 'none';
+  document.getElementById('statusError').style.display = 'none';
+  document.getElementById('resultArea').style.display = 'none';
+  if (type === 'loading') {
+    document.getElementById('statusLoading').style.display = 'block';
+  } else if (type === 'error') {
+    document.getElementById('statusError').style.display = 'block';
+    document.getElementById('statusError').textContent = msg;
+  }
+}
+
+function makeDownloadBtn(label, url, cssClass, filename) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'facebook-video.mp4';
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.className = 'btn ' + cssClass;
+  a.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>${label}`;
+  return a;
+}
+
+async function fetchVideo() {
+  const url = document.getElementById('fbUrl').value.trim();
+  if (!url) {
+    showStatus('error', 'Vui lòng nhập link video Facebook.');
+    return;
+  }
+  if (!/facebook\.com|fb\.watch|fb\.com/.test(url)) {
+    showStatus('error', 'Link không hợp lệ. Vui lòng nhập đúng link video Facebook (facebook.com, fb.watch).');
+    return;
+  }
+
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true;
+  showStatus('loading');
+
+  try {
+    const res = await fetch(COBALT_API, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: url,
+        videoQuality: 'max',
+        filenameStyle: 'pretty',
+        downloadMode: 'auto',
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Máy chủ phản hồi lỗi: ' + res.status);
+    }
+
+    const data = await res.json();
+    handleResult(data, url);
+  } catch (err) {
+    showStatus('error', 'Không thể kết nối dịch vụ tải video. Vui lòng thử lại sau.\n(' + err.message + ')');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function handleResult(data, sourceUrl) {
+  document.getElementById('statusLoading').style.display = 'none';
+  document.getElementById('statusError').style.display = 'none';
+
+  const opts = document.getElementById('downloadOptions');
+  opts.innerHTML = '';
+  document.getElementById('videoTitle').textContent = '';
+  document.getElementById('videoThumb').style.display = 'none';
+
+  if (data.status === 'error') {
+    const code = data.error?.code || 'unknown';
+    const msg = errorMessage(code);
+    showStatus('error', msg);
+    return;
+  }
+
+  if (data.status === 'redirect' || data.status === 'tunnel') {
+    const filename = data.filename || 'facebook-video.mp4';
+    document.getElementById('videoTitle').textContent = filename.replace(/\.[^.]+$/, '').replace(/_/g, ' ');
+    if (data.thumbnail) {
+      const thumb = document.getElementById('videoThumb');
+      thumb.src = data.thumbnail;
+      thumb.style.display = 'block';
+    }
+    opts.appendChild(makeDownloadBtn('Tải Video (Chất lượng cao)', data.url, 'btn-hd', filename));
+    document.getElementById('resultArea').style.display = 'block';
+    return;
+  }
+
+  if (data.status === 'picker') {
+    document.getElementById('videoTitle').textContent = 'Chọn định dạng để tải:';
+    if (data.audio) {
+      opts.appendChild(makeDownloadBtn('Tải Âm thanh', data.audio, 'btn-audio', 'audio.mp3'));
+    }
+    data.picker.forEach((item, i) => {
+      if (item.url) {
+        const label = item.type === 'video' ? `Video ${i + 1}` : `File ${i + 1}`;
+        opts.appendChild(makeDownloadBtn(label, item.url, 'btn-hd', `facebook-${i + 1}.mp4`));
+        if (item.thumb && i === 0) {
+          const thumb = document.getElementById('videoThumb');
+          thumb.src = item.thumb;
+          thumb.style.display = 'block';
+        }
+      }
+    });
+    document.getElementById('resultArea').style.display = 'block';
+    return;
+  }
+
+  showStatus('error', 'Phản hồi không hợp lệ từ máy chủ. Vui lòng thử lại.');
+}
+
+function errorMessage(code) {
+  const messages = {
+    'error.api.link.invalid': 'Link không hợp lệ. Hãy kiểm tra lại link Facebook.',
+    'error.api.link.unsupported': 'Link này không được hỗ trợ. Chỉ hỗ trợ video Facebook công khai.',
+    'error.api.fetch.fail': 'Không thể tải thông tin video. Video có thể bị riêng tư hoặc đã bị xoá.',
+    'error.api.fetch.short.limit': 'Đã vượt giới hạn yêu cầu. Vui lòng thử lại sau ít phút.',
+    'error.api.rate_exceeded': 'Đã vượt giới hạn yêu cầu. Vui lòng chờ vài phút rồi thử lại.',
+    'error.api.content.too_long': 'Video quá dài, không thể xử lý.',
+    'error.api.content.video.unavailable': 'Video không khả dụng hoặc đã bị xoá.',
+  };
+  return messages[code] || `Lỗi: ${code}. Video có thể bị riêng tư hoặc không hỗ trợ.`;
+}
+
+document.getElementById('fbUrl').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') fetchVideo();
+});
+
+document.getElementById('fbUrl').addEventListener('paste', function() {
+  setTimeout(() => {
+    const v = this.value.trim();
+    if (/facebook\.com|fb\.watch|fb\.com/.test(v)) {
+      document.getElementById('fetchBtn').focus();
+    }
+  }, 100);
+});
+</script>
+</body>
+</html>
